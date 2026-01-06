@@ -1,6 +1,0 @@
-file 'normalized/IMG_4724.mp4'
-file 'normalized/IMG_4725.mp4'
-file 'normalized/IMG_4726.mp4'
-file 'normalized/VID_20260106_104520.mp4'
-file 'normalized/VID_20260106_104733.mp4'
-file 'normalized/example.mp4'

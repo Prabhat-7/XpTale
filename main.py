@@ -116,3 +116,25 @@ for file in input_files:
     else:
         print(f"Skipping unsupported file: {file.name}")
 
+
+# ----------------------------
+# GENERATE files.txt
+# ----------------------------
+print("Generating files.txt for FFmpeg merge...")
+with open(FILES_TXT, "w") as f:
+    for pf in processed_files:
+        f.write(f"file '{pf.as_posix().replace('temp/', '')}'\n")
+# ----------------------------
+# MERGE EVERYTHING
+# ----------------------------
+print("Merging all videos into final output...")
+merge_cmd = [
+    "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+    "-i", FILES_TXT,
+    "-c:v", VIDEO_CODEC, "-preset", PRESET, "-crf", CRF,
+    "-c:a", AUDIO_CODEC,
+    OUTPUT_FILE
+]
+subprocess.run(merge_cmd, check=True)
+
+print(f"✅ Merge complete! Final video saved at: {OUTPUT_FILE}")

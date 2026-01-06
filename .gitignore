@@ -8,9 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
-input/
-!input/
+input/*
 !input/example.jpeg
-temp/normalized/
-!temp/normalized/
+temp/normalized/*
 !temp/normalized/example.mp4

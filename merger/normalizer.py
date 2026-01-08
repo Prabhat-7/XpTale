@@ -1,7 +1,6 @@
 from .config import Config
 from .cmd_runner import CmdRunner
 
-cmd=CmdRunner()
 
 class Normalizer:
     @staticmethod
@@ -20,4 +19,4 @@ class Normalizer:
             "-c:a", Config.AUDIO_CODEC,
             str(output_path)
         ]
-        cmd.run_cmd(cmd)
+        CmdRunner.run(cmd)

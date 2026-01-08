@@ -1,7 +1,6 @@
 from .cmd_runner import CmdRunner
 from .config import Config
 
-cmd=CmdRunner
 
 class Converter:
     @staticmethod
@@ -27,4 +26,4 @@ class Converter:
             "-pix_fmt", "yuv420p",
             str(output_path)
         ]
-        cmd.run_cmd(cmd)
+        CmdRunner.run(cmd)

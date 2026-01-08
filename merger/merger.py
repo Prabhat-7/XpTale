@@ -5,6 +5,7 @@ from .console import ConsoleStyle
 from .normalizer import Normalizer
 from .cmd_runner import CmdRunner
 from .converter import Converter 
+from .create import Create
 
 printer=ConsoleStyle()
 
@@ -28,11 +29,12 @@ class Merger:
     def is_photo(file):
         return file.suffix.lower() in Config.PHOTO_EXTENSIONS
     
-    def merge(self):
+    def merge(self,input_folder=Config.INPUT_FOLDER,merged_output=Config.OUTPUT_FILE):
         """Merges all the videos together"""
+        Create.create_folders()
         printer.print_section("Processing Pipeline Started")
         printer.print_step("Scanning input folder...")
-        input_files = sorted(Path(Config.INPUT_FOLDER).iterdir())  # sorted for order
+        input_files = sorted(Path(input_folder).iterdir())  # sorted for order
 
         for file in input_files:
             if Merger.is_video(file):
@@ -47,8 +49,8 @@ class Merger:
                 if file.suffix.lower() == ".heic":
                 # Convert HEIC to JPEG using sips
                     converted_jpeg = Path(Config.CONVERTED_FOLDER) / (file.stem + ".jpeg")
-                    printer.print_substep(f"Converting HEIC to JPEG: {file.name} -> {converted_jpeg.name}")
-                    CmdRunner.run_cmd(["sips", "-s", "format", "jpeg", str(file), "--out", str(converted_jpeg)])
+                    printer.print_sub_step(f"Converting HEIC to JPEG: {file.name} -> {converted_jpeg.name}")
+                    CmdRunner.run(["sips", "-s", "format", "jpeg", str(file), "--out", str(converted_jpeg)])
                     printer.print_success(f"Converted HEIC to JPEG: {converted_jpeg.name}\n")
                     photo_input = converted_jpeg
                 else:
@@ -56,7 +58,7 @@ class Merger:
 
             # Convert photo (JPEG/PNG) to video
                 output_file = Path(Config.NORMALIZED_FOLDER) / (file.stem + ".mp4")
-                printer.print_substep(f"Converting photo to video: {photo_input.name}")
+                printer.print_sub_step(f"Converting photo to video: {photo_input.name}")
                 Converter.convert(photo_input, output_file)
                 self.processed_files.append(output_file)
                 printer.print_success(f"Converted photo to video: {output_file.name}\n")
@@ -64,7 +66,7 @@ class Merger:
             else:
                 printer.print_warning(f"Skipping unsupported file: {file.name}")
 
-        Merger.create_file()
+        self.create_file()
         # ----------------------------
         # MERGE EVERYTHING
         # ----------------------------
@@ -76,12 +78,12 @@ class Merger:
             "-c:a", Config.AUDIO_CODEC,
             Config.OUTPUT_FILE
         ]
-        CmdRunner.run_cmd(merge_cmd)
+        CmdRunner.run(merge_cmd)
 
         printer.print_section("Task Completed")
-        printer.print_success(f"Merge complete! Final video saved at: [bold]{Config.OUTPUT_FILE}[/bold]")
+        printer.print_success(f"Merge complete! Final video saved at: [bold]{merged_output}[/bold]")
 
         delete_temp_cmd=[
             "rm", "-rf","temp"
         ]
-        CmdRunner.run_cmd(delete_temp_cmd)
+        CmdRunner.run(delete_temp_cmd)

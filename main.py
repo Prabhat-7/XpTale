@@ -1,4 +1,3 @@
-from merger import Merger, Create
+from image_filter import Filter
 
-merger=Merger()
-merger.merge()
+print(Filter.is_eligible("input/blur.jpg"))  # Example usage

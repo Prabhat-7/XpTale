@@ -12,3 +12,4 @@ input/*
 !input/example.jpeg
 temp/normalized/*
 !temp/normalized/example.mp4
+.env

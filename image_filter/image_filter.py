@@ -1,56 +1,55 @@
-import base64
-from dotenv import load_dotenv
+from .config import Config
 from pathlib import Path
-from langchain_google_genai import ChatGoogleGenerativeAI 
-from langchain.messages import HumanMessage
+import shutil
+from .check_duplicate import CheckDuplicate
 
-from .structured_outputs import ImageDuplicateOutput
-from .prompts import DUPLICATE_PROMPT
 
-load_dotenv()
 class Filter:
     @staticmethod
-    def encode_image(path: Path):
-        with open(path, "rb") as f:
-            return base64.b64encode(f.read()).decode("utf-8")
+    def is_photo(file):
+        return file.suffix.lower() in Config.PHOTO_EXTENSIONS
+
     @staticmethod
-    def get_mime(path: Path):
-        ext = path.suffix.lower()
-        if ext == ".png":
-            return "image/png"
-        if ext in [".jpg", ".jpeg"]:
-            return "image/jpeg"
-        if ext == ".webp":
-            return "image/webp"
-        return "image/jpeg"
-    @staticmethod
-    def is_duplicate(img1_path, img2_path):
-        llm =ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash"
-        ).with_structured_output(ImageDuplicateOutput)
+    def filter():
+        if not Path(Config.OUTPUT_FOLDER).exists():
+            Path(Config.OUTPUT_FOLDER).mkdir(parents=True, exist_ok=True)
 
-        img1_path = Path(img1_path)
-        img2_path = Path(img2_path)
+        input_images = sorted(
+            [
+                f
+                for f in sorted(Path(Config.INPUT_FOLDER).iterdir())
+                if Filter.is_photo(f)
+            ]
+        )
+        if not input_images:
+            print("No images found in input folder.")
+            return
 
-        img1_b64 = Filter.encode_image(img1_path)
-        img2_b64 = Filter.encode_image(img2_path)
+        # First image always passes
+        first_image = input_images[0]
+        shutil.copy2(first_image, Path(Config.OUTPUT_FOLDER) / first_image.name)
+        print(f"Copied {first_image.name} (first image)")
 
-        message = HumanMessage(content=[
-            {"type": "text", "text": DUPLICATE_PROMPT},
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:{Filter.get_mime(img1_path)};base64,{img1_b64}"
-                }
-            },
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:{Filter.get_mime(img2_path)};base64,{img2_b64}"
-                }
-            }
-        ])
+        # Process remaining
+        for image in input_images[1:]:
+            is_duplicate_found = False
+            output_images = list(Path(Config.OUTPUT_FOLDER).iterdir())
 
-        response = llm.invoke([message])
-        return response
-    
+            print(f"Checking {image.name}...")
+
+            for output_img in output_images:
+                # Skip non-image files in output if any (though we only put images there)
+                if not Filter.is_photo(output_img):
+                    continue
+
+                response = CheckDuplicate.is_duplicate(image, output_img)
+                if response.is_duplicate:
+                    print(
+                        f"  Duplicate of {output_img.name} (Reason: {response.reason}). Skipping."
+                    )
+                    is_duplicate_found = True
+                    break
+
+            if not is_duplicate_found:
+                shutil.copy2(image, Path(Config.OUTPUT_FOLDER) / image.name)
+                print(f"  No duplicate found. Copied {image.name}")
